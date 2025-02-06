@@ -20,3 +20,11 @@ for(year in years){
 
     df <- rbind(df,temp)
 }
+
+df <- df %>%
+    mutate(place_id = substr(place,2,3)) %>%
+    select(id,year,month,crime,place_id, neighborhood)
+
+label(df$place_id) <- "Police precinct"
+
+save(df, file = paste0(wd,"Input/df.rda"))
