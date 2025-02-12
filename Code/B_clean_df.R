@@ -32,9 +32,9 @@ df <- df %>%
 
 # agreggating roberries
 df <- df %>%
-    mutate(robbery = across(car_theft:last_col(),sum(.x))) %>%
-    select(everything(),-contains("(r|R)obbery"),cargo_robbery,car_robbery) %>%
-    mutate(retaliation_index = homicide + car_theft + cargo_robbery + car_robbery)
+    mutate(robbery = across(car_theft:last_col(),~sum(.x)),
+    retaliation_index = homicide + car_theft + cargo_robbery + car_robbery) %>%
+    select(id:neighborhood,police_killing,homicide,robbery,car_theft,cargo_robbery,car_robbery)
 
 # creating data frame with all dates within the period
 dates <- seq(as.Date("2006-01-01"), as.Date("2020-06-30"), by = "day")
