@@ -1,6 +1,8 @@
 library(tidyverse)
 library(stringr)
 library(Hmisc)
+library(data.table)
+library(lubridate)
 
 # change the main wd (repository) here
 wd <- "/Users/bernardoduque/Documents/Brown/Aulas/2nd semester/Applied Economics/2020_final_project/"

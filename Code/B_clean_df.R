@@ -27,17 +27,33 @@ df <- df %>%
 
 # pivoting
 df <- df %>%
-    pivot_wider(names_from = crime, values_from = date, values_fn = length, values_fill = 0) %>%
-    select(everything(),car_theft,contains("(r|R)obbery"))
+    mutate(n =1,
+           date = as.Date(date,format = "%Y-%m-%d")) %>%
+    group_by(date,year,month,place_id,crime) %>%
+    summarise(crime_n = sum(n)) %>%
+    pivot_wider(names_from = crime, values_from = crime_n) %>%
+    select(date:place_id,police_killing,homicide,car_theft,cargo_robbery,car_robbery,contains("robbery", ignore.case = TRUE))
 
 # agreggating roberries
+setDT(df)
+start_col <- which(names(df) == "car_theft")
+
+# create 'robbery' as the sum of all columns from 'car_theft' to the last column
+df[, robbery := rowSums(.SD, na.rm = T), .SDcols = start_col:ncol(df)]
+  
 df <- df %>%
-    mutate(robbery = across(car_theft:last_col(),~sum(.x)),
-    retaliation_index = homicide + car_theft + cargo_robbery + car_robbery) %>%
-    select(id:neighborhood,police_killing,homicide,robbery,car_theft,cargo_robbery,car_robbery)
+    mutate(retaliation_index = homicide + car_theft + cargo_robbery + car_robbery) %>%
+    select(date:place_id,police_killing,homicide,robbery,car_theft,cargo_robbery,car_robbery)
 
 # creating data frame with all dates within the period
-dates <- seq(as.Date("2006-01-01"), as.Date("2020-06-30"), by = "day")
+dates <- tibble(date = seq(as.Date("2006-01-01"), as.Date("2020-06-30"), by = "day"))
+
+dates <- dates %>%
+  mutate(year = year(date),
+         month = month(date))
+
+df <- df %>%
+  mutate(month = month(date))
 
 df_date <- dates %>%
     left_join(df)
