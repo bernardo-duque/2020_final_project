@@ -25,10 +25,15 @@ df <- df %>%
                           "Roubo em coletivo" = "Robbery in collective transport"
                           ))
 
-# pivoting
+# correcting date
 df <- df %>%
     mutate(n =1,
-           date = as.Date(date,format = "%Y-%m-%d")) %>%
+            month = as.character(substr(date,6,7)),
+            day = as.character(substr(date,9,10)),
+           date = as.Date(paste(year,month,day,sep = "-"),format = "%Y-%m-%d")) 
+
+# pivoting    
+df <- df %>%
     group_by(date,year,month,place_id,crime) %>%
     summarise(crime_n = sum(n)) %>%
     pivot_wider(names_from = crime, values_from = crime_n) %>%
@@ -42,7 +47,8 @@ start_col <- which(names(df) == "car_theft")
 df[, robbery := rowSums(.SD, na.rm = T), .SDcols = start_col:ncol(df)]
   
 df <- df %>%
-    mutate(retaliation_index = homicide + car_theft + cargo_robbery + car_robbery) %>%
+    mutate(retaliation_index = homicide + car_theft + cargo_robbery + car_robbery,
+            retaliation_index_2 = homicide + robbery) %>%
     select(date:place_id,police_killing,homicide,robbery,car_theft,cargo_robbery,car_robbery)
 
 # creating data frame with all dates within the period
