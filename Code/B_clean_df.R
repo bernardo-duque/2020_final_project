@@ -83,16 +83,7 @@ df_date <- df_date %>%
 
 save(df_date, file = paste0(wd,"Input/df_date.rda"))
 
+
 # remove everything that is not the wd paths
 rm(list=setdiff(ls(), c("wd","wd_data")))
-
-
-## prepare data for event study
-# filter out precincts without events
-df_es <- df_date %>%
-  
-
-
-
-
 
