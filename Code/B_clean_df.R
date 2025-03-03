@@ -34,10 +34,14 @@ df <- df %>%
 
 # pivoting    
 df <- df %>%
-    group_by(date,year,month,place_id,crime) %>%
+    group_by(date,year,month,day,place_id,crime) %>%
     summarise(crime_n = sum(n)) %>%
     pivot_wider(names_from = crime, values_from = crime_n) %>%
     select(date:place_id,police_killing,homicide,car_theft,cargo_robbery,car_robbery,contains("robbery", ignore.case = TRUE))
+
+# replace na for 0
+df <- df %>%
+    mutate(across(police_killing:last_col(), ~ifelse(is.na(.x),0,.x))) 
 
 # agreggating roberries
 setDT(df)
@@ -46,20 +50,25 @@ start_col <- which(names(df) == "car_theft")
 # create 'robbery' as the sum of all columns from 'car_theft' to the last column
 df[, robbery := rowSums(.SD, na.rm = T), .SDcols = start_col:ncol(df)]
   
+# construct retaliation indexes
 df <- df %>%
     mutate(retaliation_index = homicide + car_theft + cargo_robbery + car_robbery,
-            retaliation_index_2 = homicide + robbery) %>%
-    select(date:place_id,police_killing,homicide,robbery,car_theft,cargo_robbery,car_robbery)
+            retaliation_index_2 = homicide + robbery) 
 
-# creating data frame with all dates within the period
-dates <- tibble(date = seq(as.Date("2006-01-01"), as.Date("2020-06-30"), by = "day"))
+#  creating data frame with all dates within the period for all police precincts
+dates <- tibble(date = seq(as.Date("2006-01-01"), as.Date("2020-12-30"), by = "day"))
+
+dates <- expand_grid(date = dates$date, place_id = unique(df$place_id))
+label(dates$place_id) <- "Police precinct"
 
 dates <- dates %>%
   mutate(year = year(date),
-         month = month(date))
+         month = month(date),
+         day = day(date))
 
 df <- df %>%
-  mutate(month = month(date))
+  mutate(month = month(date),
+         day = day(date))
 
 df_date <- dates %>%
     left_join(df)
@@ -67,3 +76,23 @@ df_date <- dates %>%
 # identifying the events
 df_date <- df_date %>%
     mutate(event = ifelse(police_killing > 0,1,0))
+
+# NA to 0
+df_date <- df_date %>%
+  mutate(across(police_killing:last_col(), ~ifelse(is.na(.x),0,.x))) 
+
+save(df_date, file = paste0(wd,"Input/df_date.rda"))
+
+# remove everything that is not the wd paths
+rm(list=setdiff(ls(), c("wd","wd_data")))
+
+
+## prepare data for event study
+# filter out precincts without events
+df_es <- df_date %>%
+  
+
+
+
+
+
