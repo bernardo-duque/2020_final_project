@@ -1,5 +1,6 @@
 
-load(paste0(wd,"Input/df_date.rda"))
+load(file = paste0(wd,"Input/df_7.rda"))
+load(file = paste0(wd,"Input/df_14.rda"))
 
 ##### Prepare event study function #####
 
@@ -65,28 +66,6 @@ plot_es <- function(df,plot_name){
   
   ggsave(p,path = paste0(wd,"/Output/",plot_name,".pdf"))
 }
-
-
-##### Prepare data for event study #####
-# extract event day
-
-events <- df_date %>%
-  filter(event == 1) %>%        
-  select(place_id, event_date = date) 
-
-#### 7 day-window ####
-df_7 <- df_date %>%
-  left_join(events, by = "place_id",relationship = "many-to-many") %>% # we expect a many to many
-  mutate(relative_day = as.integer(date - event_date)) %>%
-  filter(relative_day >= -7 & relative_day <= 7) %>%
-  arrange(place_id, event_date, date)
-
-# 14 day-window
-df_14 <- df_date %>%
-  left_join(events, by = "place_id", relationship = "many-to-many") %>%
-  mutate(relative_day = as.integer(date - event_date)) %>%
-  filter(relative_day >= -14 & relative_day <= 14) %>%
-  arrange(place_id, event_date, date)
 
 
 ##### Run ES #####
