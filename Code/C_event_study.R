@@ -1,39 +1,54 @@
-
-load(file = paste0(wd,"Input/df_7.rda"))
-load(file = paste0(wd,"Input/df_14.rda"))
-
 ##### Prepare event study function #####
 
-run_es <- function(df,mode = c("avg","lm","lm_fe"),n_days){
+run_es <- function(df,mode = c("avg","lm","lm_fe_1","lm_fe_2"),n_days){
   
   if (mode == "avg") {
-    df_event %>%
+    es <- df %>%
       group_by(relative_day) %>%
       summarise(
         coef = mean(retaliation_index, na.rm = TRUE),
         sd_crime   = sd(retaliation_index, na.rm = TRUE),
-        n          = n(),
+        n          = n()) %>%
+      ungroup() %>%
+      mutate(coef = coef - coef[n_days],
         ci_low = coef - 1.96*sd_crime,
         ci_high = coef + 1.96*sd_crime
-      )
+      ) 
   }else{
     if(mode == "lm"){
-      reg <- lm(retaliation_index ~ factor(relative_day) - 1,df_event)
-    }else{
-      reg <- felm(
-        crime_count ~ factor(relative_day) | place_id + month, 
-        data = df_event
-      )
+      reg <- lm(retaliation_index ~ factor(relative_day) - 1,df)
+      
     }
+      # reg <- feols(
+      #   retaliation_index ~ factor(relative_day) - 1 | place_id + month,
+      #   cluster = ~place_id,
+      #   data = df
+      # )
+      # 
+      # es <- coeftable(reg) %>%
+      #   as_tibble()
+      # es$relative_day <-  c(-n_days:n_days)
+      # es <- es %>%
+      #   select(relative_day,coef = Estimate, se = `Std. Error`) %>%
+      #   mutate(coef = coef - coef[n_days])
+      
+      if(mode == "lm_fe_1") {
+        reg <- lm(retaliation_index ~ factor(relative_day) + factor(place_id) - 1,df)
+      }
+      if(mode == "lm_fe_2") {
+        reg <- lm(retaliation_index ~ factor(relative_day) + factor(place_id) + factor(month) - 1,df)
+      }
+    
     # clustering se
     reg_test <- coeftest(reg, vcov = vcovHC(reg,"HC0",cluster = "place_id"))
+    reg_test <- reg_test[1:(n_days*2 + 1),]
     
     # standardize in relation to the last period before the treatment
     reg_test[, "Estimate"] <- reg_test[,"Estimate"] - reg_test[n_days,"Estimate"]
     
     es <- tibble(relative_day = -n_days:n_days,
-                 coef = reg_test[1:(n_days*2 + 1),"Estimate"],
-                 se = reg_test[1:(n_days*2 + 1),"Std. Error"])
+                 coef = reg_test[,"Estimate"],
+                 se = reg_test[,"Std. Error"])
     
     es <- es %>%
       mutate(ci_low = coef - 1.96*se,
@@ -64,16 +79,24 @@ plot_es <- function(df,plot_name){
   
   p
   
-  ggsave(p,path = paste0(wd,"/Output/",plot_name,".pdf"))
+  ggsave(plot = p,filename = paste0(wd,"/Output/",plot_name,".pdf"))
 }
 
 
 ##### Run ES #####
 
+load(file = paste0(wd,"Input/df_7.rda"))
+load(file = paste0(wd,"Input/df_14.rda"))
+
 for (day in c(7,14)) {
-  temp <- 
-  for (mode in c("avg","lm","lm_fe")) {
-    temp <- run_es()
+  if (day == 7) {
+    temp <- df_7
+  }else{
+    temp <- df_14
+  }
+  for (mode in c("avg","lm","lm_fe_1","lm_fe_2")) {
+    temp_es <- run_es(temp,mode,day)
+    plot_es(temp_es,paste0("es_",day,"_",mode))
   }
 }
 

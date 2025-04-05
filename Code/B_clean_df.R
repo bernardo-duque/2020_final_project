@@ -84,6 +84,32 @@ df_date <- df_date %>%
 save(df_date, file = paste0(wd,"Input/df_date.rda"))
 
 
+##### Prepare data for event study #####
+# extract event day
+
+events <- df_date %>%
+  filter(event == 1) %>%        
+  select(place_id, event_date = date) 
+
+#### 7 day-window ####
+df_7 <- df_date %>%
+  left_join(events, by = "place_id",relationship = "many-to-many") %>% # we expect a many to many
+  mutate(relative_day = as.integer(date - event_date)) %>%
+  filter(relative_day >= -7 & relative_day <= 7) %>%
+  arrange(place_id, event_date, date)
+
+# 14 day-window
+df_14 <- df_date %>%
+  left_join(events, by = "place_id", relationship = "many-to-many") %>%
+  mutate(relative_day = as.integer(date - event_date)) %>%
+  filter(relative_day >= -14 & relative_day <= 14) %>%
+  arrange(place_id, event_date, date)
+
+
+  save(df_7, file = paste0(wd,"Input/df_7.rda"))
+  save(df_14, file = paste0(wd,"Input/df_14.rda"))
+
+
 # remove everything that is not the wd paths
 rm(list=setdiff(ls(), c("wd","wd_data")))
 
