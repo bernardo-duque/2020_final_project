@@ -1,22 +1,25 @@
 ##### Prepare event study function #####
 
-run_es <- function(df,mode = c("avg","lm","lm_fe_1","lm_fe_2"),n_days){
+run_es <- function(df,dep_var,mode = c("avg","lm","lm_fe_1","lm_fe_2"),n_days){
   
-  if (mode == "avg") {
+  v_sym <- sym(dep_var)
+  
+  if (mode == "avg") { #computing this way is redundant with running a linear regression, i did it just to check if everything was correct
     es <- df %>%
       group_by(relative_day) %>%
       summarise(
-        coef = mean(retaliation_index, na.rm = TRUE),
-        sd_crime   = sd(retaliation_index, na.rm = TRUE),
+        coef = mean(!!v_sym, na.rm = TRUE),
+        sd_crime   = sd(!!v_sym, na.rm = TRUE),
         n          = n()) %>%
       ungroup() %>%
       mutate(coef = coef - coef[n_days],
-        ci_low = coef - 1.96*sd_crime,
-        ci_high = coef + 1.96*sd_crime
+        ci_low = coef - 1.96*(sd_crime / sqrt(n)),
+        ci_high = coef + 1.96*(sd_crime / sqrt(n))
       ) 
   }else{
     if(mode == "lm"){
-      reg <- lm(retaliation_index ~ factor(relative_day) - 1,df)
+      formula <- as.formula(paste0(dep_var," ~ factor(relative_day) - 1"))
+      reg <- lm(formula,df)
       
     }
       # reg <- feols(
@@ -33,10 +36,12 @@ run_es <- function(df,mode = c("avg","lm","lm_fe_1","lm_fe_2"),n_days){
       #   mutate(coef = coef - coef[n_days])
       
       if(mode == "lm_fe_1") {
-        reg <- lm(retaliation_index ~ factor(relative_day) + factor(place_id) - 1,df)
+        formula <- as.formula(paste0(dep_var," ~ factor(relative_day) + factor(place_id) - 1"))
+        reg <- lm(formula,df)
       }
       if(mode == "lm_fe_2") {
-        reg <- lm(retaliation_index ~ factor(relative_day) + factor(place_id) + factor(month) - 1,df)
+        formula <- as.formula(paste0(dep_var," ~ factor(relative_day) + factor(place_id) + factor(month) - 1"))
+        reg <- lm(formula,df)
       }
     
     # clustering se
@@ -94,10 +99,18 @@ for (day in c(7,14)) {
   }else{
     temp <- df_14
   }
-  for (mode in c("avg","lm","lm_fe_1","lm_fe_2")) {
-    temp_es <- run_es(temp,mode,day)
-    plot_es(temp_es,paste0("es_",day,"_",mode))
+  for (dep in c("retaliation_index","retaliation_index_2")) {
+    for (mode in c("avg","lm","lm_fe_1","lm_fe_2")) {
+      temp_es <- run_es(temp,dep,mode,day)
+      if (dep == "retaliation_index") {
+        dep_short <- "ri_1"
+      }else{
+        dep_short <- "ri_2"
+      }
+      plot_es(temp_es,paste0("es_",day,"_",dep_short,"_",mode))
+    }
   }
+  
 }
 
 
