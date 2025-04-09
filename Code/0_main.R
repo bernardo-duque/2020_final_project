@@ -8,8 +8,6 @@ library(lmtest)
 library(lfe)
 library(fixest)
 library(rlang)
-library(sf)
-library(Cairo)
 
 # change the main wd (repository) here
 wd <- "/Users/bernardoduque/Documents/Brown/Aulas/2nd semester/Applied Economics/2020_final_project/"
@@ -20,6 +18,8 @@ wd_data <- "/Users/bernardoduque/Documents/Brown/Aulas/2nd semester/Applied Econ
 source(paste0(wd,"Code/A_concat_data.R"))
 
 source(paste0(wd,"Code/B_clean_df.R"))
+
+source(paste0(wd,"Code/C_descriptives.R"))
 
 source(paste0(wd,"Code/C_event_study.R"))
 
