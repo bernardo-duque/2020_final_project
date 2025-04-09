@@ -108,7 +108,7 @@ df_14 <- df_date %>%
 
   save(df_7, file = paste0(wd,"Input/df_7.rda"))
   save(df_14, file = paste0(wd,"Input/df_14.rda"))
-
+  
 
 # remove everything that is not the wd paths
 rm(list=setdiff(ls(), c("wd","wd_data")))

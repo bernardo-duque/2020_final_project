@@ -114,4 +114,33 @@ for (day in c(7,14)) {
 }
 
 
+##### Checking how much overlap we have in the event study #####
+
+check_7 <- df_7 %>%
+  mutate(n = 1) %>%
+  group_by(place_id,date) %>%
+  summarise(n = sum(n)) 
+
+check_14 <- df_14 %>%
+  mutate(n = 1) %>%
+  group_by(place_id,date) %>%
+  summarise(n = sum(n)) 
+
+for (days in c(7,14)) {
+  if (days == 7) {
+    temp <- check_7
+  }else{
+    temp <- check_14
+  }
+  for (num in 1:9) {
+    a <- temp %>%
+      filter(n > num) %>%
+      nrow()
+    
+    print(paste0("Considering a ", days,"-day window, there are ",a," precinct-date observations that overlap  ", num, " time(s)"))
+  }
+}
+
+
+
 
