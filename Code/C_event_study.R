@@ -17,47 +17,95 @@ run_es <- function(df,dep_var,mode = c("avg","lm","lm_fe_1","lm_fe_2"),n_days){
         ci_high = coef + 1.96*(sd_crime / sqrt(n))
       ) 
   }else{
+    
     if(mode == "lm"){
       formula <- as.formula(paste0(dep_var," ~ factor(relative_day) - 1"))
       reg <- lm(formula,df)
       
+      # clustering se
+      reg_test <- coeftest(reg, vcov = vcovHC(reg,"HC0",cluster = "place_id"))
+      reg_test <- reg_test[1:(n_days*2 + 1),]
+      
+      # standardize in relation to the last period before the treatment
+      reg_test[, "Estimate"] <- reg_test[,"Estimate"] - reg_test[n_days,"Estimate"]
+      
+      es <- tibble(relative_day = -n_days:n_days,
+                   coef = reg_test[,"Estimate"],
+                   se = reg_test[,"Std. Error"])
+      
     }
-      # reg <- feols(
-      #   retaliation_index ~ factor(relative_day) - 1 | place_id + month,
-      #   cluster = ~place_id,
-      #   data = df
-      # )
-      # 
-      # es <- coeftable(reg) %>%
-      #   as_tibble()
-      # es$relative_day <-  c(-n_days:n_days)
-      # es <- es %>%
-      #   select(relative_day,coef = Estimate, se = `Std. Error`) %>%
-      #   mutate(coef = coef - coef[n_days])
       
       if(mode == "lm_fe_1") {
-        formula <- as.formula(paste0(dep_var," ~ factor(relative_day) + factor(place_id) - 1"))
-        reg <- lm(formula,df)
+        # formula <- as.formula(paste0(dep_var," ~ factor(relative_day) + factor(place_id) - 1"))
+        # reg <- lm(formula,df)
+        
+        formula <- as.formula(paste0(dep_var," ~ i(relative_day, ref = -1) | place_id"))
+        reg <- feols(
+          #retaliation_index_100k ~ factor(relative_day) - 1 | place_id,
+          formula,
+          cluster = ~place_id,
+          data = df
+        )
+        
+        es <- coeftable(reg) %>%
+          as_tibble()
+        
+        # partitioning es to include time -1 (reference period)
+        es_1 <- es[1:(n_days - 1),]
+        es_2 <- es[n_days:(n_days*2),]
+        
+        es <- es_1 %>%
+          rbind(c(0,0,0,0)) %>%
+          rbind(es_2)
+        
+        es$relative_day <-  c(-n_days:n_days)
+        es <- es %>%
+          select(relative_day,coef = Estimate, se = `Std. Error`) %>%
+          mutate(coef = coef - coef[n_days])
       }
       if(mode == "lm_fe_2") {
-        formula <- as.formula(paste0(dep_var," ~ factor(relative_day) + factor(place_id) + factor(month) - 1"))
-        reg <- lm(formula,df)
+        # formula <- as.formula(paste0(dep_var," ~ factor(relative_day) + factor(place_id) + factor(month) - 1"))
+        # reg <- lm(formula,df)
+        
+        formula <- as.formula(paste0(dep_var," ~ i(relative_day, ref = -1)| place_id + month"))
+        reg <- feols(
+          #retaliation_index_100k ~ factor(relative_day) - 1 | place_id + month,
+          formula,
+          cluster = ~place_id,
+          data = df
+        )
+        
+        es <- coeftable(reg) %>%
+          as_tibble()
+        # partitioning es to include time -1 (reference period)
+        es_1 <- es[1:(n_days - 1),]
+        es_2 <- es[n_days:(n_days*2),]
+        
+        es <- es_1 %>%
+          rbind(c(0,0,0,0)) %>%
+          rbind(es_2)
+        
+        es$relative_day <-  c(-n_days:n_days)
+        es <- es %>%
+          select(relative_day,coef = Estimate, se = `Std. Error`) %>%
+          mutate(coef = coef - coef[n_days])
       }
     
-    # clustering se
-    reg_test <- coeftest(reg, vcov = vcovHC(reg,"HC0",cluster = "place_id"))
-    reg_test <- reg_test[1:(n_days*2 + 1),]
-    
-    # standardize in relation to the last period before the treatment
-    reg_test[, "Estimate"] <- reg_test[,"Estimate"] - reg_test[n_days,"Estimate"]
-    
-    es <- tibble(relative_day = -n_days:n_days,
-                 coef = reg_test[,"Estimate"],
-                 se = reg_test[,"Std. Error"])
-    
+    # # clustering se
+    # reg_test <- coeftest(reg, vcov = vcovHC(reg,"HC0",cluster = "place_id"))
+    # reg_test <- reg_test[1:(n_days*2 + 1),]
+    # 
+    # # standardize in relation to the last period before the treatment
+    # reg_test[, "Estimate"] <- reg_test[,"Estimate"] - reg_test[n_days,"Estimate"]
+    # 
+    # es <- tibble(relative_day = -n_days:n_days,
+    #              coef = reg_test[,"Estimate"],
+    #              se = reg_test[,"Std. Error"])
+    # 
     es <- es %>%
       mutate(ci_low = coef - 1.96*se,
              ci_high = coef + 1.96*se)
+    
   }
   
   return(es)
@@ -95,7 +143,7 @@ load(file = paste0(wd,"Input/df_14.rda"))
 
 # defining the looping vectors
 days <- c(7, 14)
-deps <- c("retaliation_index", "retaliation_index_2")
+deps <- c("retaliation_index_100k", "retaliation_index_2_100k")
 modes <- c("avg", "lm", "lm_fe_1", "lm_fe_2")
 
 # total number of iterations
@@ -110,7 +158,7 @@ for (day in days) {
     for (mode in modes) {
       
       temp_es <- run_es(temp, dep, mode, day)
-      dep_short <- if (dep == "retaliation_index") "ri_1" else "ri_2"
+      dep_short <- if (dep == "retaliation_index_100k") "ri_1" else "ri_2"
       
       plot_name <- paste0("es_", day, "_", dep_short, "_", mode)
       plot_es(temp_es, plot_name)

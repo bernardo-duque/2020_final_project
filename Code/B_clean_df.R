@@ -95,8 +95,7 @@ df_date <- df_date %>%
 
 # adjust every crime and police killing variable by 100k inhabitants
 df_date <- df_date %>%
-  mutate(across(homicide:retaliation_index_2,~.x*100000/pop),
-         police_killing_100k = police_killing * 100000/pop)
+  mutate(across(homicide:retaliation_index_2,~.x*100000/pop,.names = "{.col}_100k"))
 
 save(df_date, file = paste0(wd,"Input/df_date.rda"))
 
