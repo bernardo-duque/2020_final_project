@@ -1,48 +1,77 @@
-
-load(file = paste0(wd,"Input/df_7.rda"))
-load(file = paste0(wd,"Input/df_14.rda"))
+load(paste0(wd,"Input/df_date.rda"))
 
 ##### Number of events #####
 
-num_years <- unique(df_7$year) %>%
+num_years <- unique(df_date$year) %>%
   length()
 
-num_events <- df_7 %>%
-  filter(event > 0) %>%
-  nrow()
+n_events <- sum(df_date$event)
 
-max_events_year <- df_7 %>%
+max_events_year <- df_date %>%
   group_by(year,place_id) %>%
   summarise(sum = sum(event)) %>%
   ungroup() %>%
   summarise(max = max(sum),
             min = min(sum))
 
-summary <- df_7 %>%
+ovr <- max_events_year %>%
+  mutate(type = "Total", mean = num_events,median = "",sd = "") %>%
+  select(type,mean,median,sd,max,min)
+
+# summary over the whole period within precincts
+summary <- df_date %>%
   group_by(place_id) %>%
   summarise(event = sum(event)) %>%
   ungroup() %>%
   summarise(mean = mean(event),
+            median = median(event),
             sd = sd(event),
             min = min(event),
-            max = max(event),
-            median = median(event))
+            max = max(event)) %>%
+  mutate(type = "Overall") %>%
+  select(type, everything())
 
-summary_year <- df_7 %>%
+# annual summary within precincts
+summary_year <- df_date %>%
   group_by(place_id) %>%
   summarise(event = sum(event)/num_years) %>%
   ungroup() %>%
   summarise(mean = mean(event),
+            median = median(event),
             sd = sd(event),
             min = min(event),
-            max = max(event),
-            median = median(event))
+            max = max(event)) %>%
+  mutate(type = "Year") %>%
+  select(type, everything())
 
-##### Map of higher means #####
+# putting everything in one table
+summary <- summary %>%
+  rbind(summary_year) %>%
+  mutate(across(mean:max,~round(.x,2))) %>%
+  rbind(ovr)
 
-mean_place <- df_7 %>%
+### Mean per year ####
+
+teste <- df_date %>%
+  group_by(year,place_id) %>%
+  summarise(events = sum(event)) %>%
+  group_by(year) %>%
+  summarise(mean_events = mean(events),
+            sd_events = sd(events),
+            max = max(events),
+            min = min(events)) %>%
+  round(2)
+
+##### Summary on retaliation #####
+
+
+
+##### Map of precinct annual means #####
+
+mean_place <- df_date %>%
   group_by(place_id) %>%
-  summarise(mean = sum(event)/num_years)
+  summarise(mean_events = sum(event)/num_years,
+            mean_retaliation = sum(retaliation_index)/num_years)
 
 # reading the shape file
 
@@ -51,29 +80,68 @@ sf <- st_read(paste0(wd_data,"limite_cisp_072024/lm_cisp_bd.shp"))
 sf <- sf %>%
   rename(place_id = cisp)
 
-mean_place <- mean_place %>%
-  mutate(place_id = as.double(place_id)) %>%
-  left_join(sf %>% select(place_id,geometry))
+# filtering only relevant precincts
+places_id <- unique(mean_place$place_id)
 
-mean_place %>%
+sf <- sf %>%
+  select(place_id,geometry) %>%
+  filter(place_id %in% places_id) %>%
+  left_join(mean_place)
+
+# map of number of events
+map_1 <- sf %>%
   ggplot() +
-  geom_sf(aes(fill=mean),
-          alpha = 0.83, color = "white") +
-  scale_fill_gradient(low = "navajowhite", high = "red", name = "Share",na.value = "grey50") +
+  geom_sf(aes(fill=mean_events),
+          alpha = 0.95, color = "white") +
+  scale_fill_gradient(low = "lightpink", high = "deeppink", name = "# of Events",na.value = "grey50") +
   theme_bw() +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
+        axis.title = element_blank(),
+        #axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        #panel.grid = element_blank(),
         plot.title = element_text(hjust = 0.5,face = "bold"),
-        axis.text = element_text(face = "bold",size = 14),
         #strip.background = element_rect(fill="#1e81b0"),
-        strip.background = element_rect(fill="red"),
         strip.text = element_text(colour="white"),
-        legend.position = c(0.18,0.23)
+        legend.position = c(0.1,0.8),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        legend.spacing = unit(0.2, "cm"),
   ) +
-  guides(fill = guide_legend(title = "Share (%)"))
+  guides(fill = guide_legend(title = "# of Events "))
 
-Cairo::CairoJPEG("figures/mapa.jpeg", width = 8, height = 6,units = "in", dpi = 300)
-print(mapa)
+Cairo::CairoJPEG(paste0(wd,"Output/map_events.jpeg"), width = 8, height = 6,units = "in", dpi = 300)
+print(map_1)
+dev.off()
+
+# map of retaliation
+map_2 <- sf %>%
+  ggplot() +
+  geom_sf(aes(fill=mean_retaliation),
+          alpha = 0.95, color = "white") +
+  scale_fill_gradient(low = "lightpink", high = "deeppink", name = "# of Events",na.value = "grey50") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.title = element_blank(),
+        #axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        #panel.grid = element_blank(),
+        plot.title = element_text(hjust = 0.5,face = "bold"),
+        #strip.background = element_rect(fill="#1e81b0"),
+        strip.text = element_text(colour="white"),
+        legend.position = c(0.1,0.8),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        legend.spacing = unit(0.2, "cm"),
+  ) +
+  guides(fill = guide_legend(title = "# of Retaliation"))
+
+Cairo::CairoJPEG(paste0(wd,"Output/map_retaliation.jpeg"), width = 8, height = 6,units = "in", dpi = 300)
+print(map_2)
 dev.off()
 
 

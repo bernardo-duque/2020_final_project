@@ -81,6 +81,23 @@ df_date <- df_date %>%
 df_date <- df_date %>%
   mutate(across(police_killing:last_col(), ~ifelse(is.na(.x),0,.x))) 
 
+##### Adjust crimes by precinct population #####
+
+pop <- read.csv2(paste0(wd_data,"PopulacaoEvolucaoAnualCisp.csv"),header = T)
+
+pop <- pop %>%
+  rename(place_id = circ,year = ano)
+
+# setting the class of one of the key variable to be equal in both dfs
+df_date <- df_date %>% 
+  mutate(place_id = as.double(place_id)) %>%
+  left_join(pop)
+
+# adjust every crime and police killing variable by 100k inhabitants
+df_date <- df_date %>%
+  mutate(across(homicide:retaliation_index_2,~.x*100000/pop),
+         police_killing_100k = police_killing * 100000/pop)
+
 save(df_date, file = paste0(wd,"Input/df_date.rda"))
 
 
@@ -98,6 +115,17 @@ df_7 <- df_date %>%
   filter(relative_day >= -7 & relative_day <= 7) %>%
   arrange(place_id, event_date, date)
 
+# number of overlaped observations
+sum(duplicated(df_7[,c("date","place_id")]))
+
+df_7 %>%
+  mutate(n=1) %>%
+  group_by(place_id,date,event) %>%
+  summarise(n = sum(n)) %>%
+  ungroup() %>%
+  filter(n > 1) %>%
+  nrow()
+
 # 14 day-window
 df_14 <- df_date %>%
   left_join(events, by = "place_id", relationship = "many-to-many") %>%
@@ -106,8 +134,22 @@ df_14 <- df_date %>%
   arrange(place_id, event_date, date)
 
 
-  save(df_7, file = paste0(wd,"Input/df_7.rda"))
-  save(df_14, file = paste0(wd,"Input/df_14.rda"))
+save(df_7, file = paste0(wd,"Input/df_7.rda"))
+save(df_14, file = paste0(wd,"Input/df_14.rda"))
+  
+  
+##### Preparing data for regression (agregating by week) #####
+
+df_week <- df_date %>%
+  mutate(week_index = week(date)) %>%
+  group_by(year,week_index, place_id) %>%
+  summarise(
+    week_start = min(date),
+    across(police_killing:retaliation_index, ~ sum(.x, na.rm = TRUE)),
+    event = sum(event, na.rm = TRUE) > 0,
+    police_killing_100k = sum(police_killing_100k, na.rm = TRUE)
+  )
+
   
 
 # remove everything that is not the wd paths

@@ -84,7 +84,7 @@ plot_es <- function(df,plot_name){
   
   p
   
-  ggsave(plot = p,filename = paste0(wd,"/Output/",plot_name,".pdf"))
+  suppressMessages(ggsave(plot = p,filename = paste0(wd,"/Output/",plot_name,".pdf")))
 }
 
 
@@ -93,38 +93,51 @@ plot_es <- function(df,plot_name){
 load(file = paste0(wd,"Input/df_7.rda"))
 load(file = paste0(wd,"Input/df_14.rda"))
 
-for (day in c(7,14)) {
-  if (day == 7) {
-    temp <- df_7
-  }else{
-    temp <- df_14
-  }
-  for (dep in c("retaliation_index","retaliation_index_2")) {
-    for (mode in c("avg","lm","lm_fe_1","lm_fe_2")) {
-      temp_es <- run_es(temp,dep,mode,day)
-      if (dep == "retaliation_index") {
-        dep_short <- "ri_1"
-      }else{
-        dep_short <- "ri_2"
-      }
-      plot_es(temp_es,paste0("es_",day,"_",dep_short,"_",mode))
+# defining the looping vectors
+days <- c(7, 14)
+deps <- c("retaliation_index", "retaliation_index_2")
+modes <- c("avg", "lm", "lm_fe_1", "lm_fe_2")
+
+# total number of iterations
+total_iterations <- length(days) * length(deps) * length(modes)
+
+i <- 1
+# Loop
+for (day in days) {
+  temp <- if (day == 7) df_7 else df_14
+  
+  for (dep in deps) {
+    for (mode in modes) {
+      
+      temp_es <- run_es(temp, dep, mode, day)
+      dep_short <- if (dep == "retaliation_index") "ri_1" else "ri_2"
+      
+      plot_name <- paste0("es_", day, "_", dep_short, "_", mode)
+      plot_es(temp_es, plot_name)
+      
+      # progress print
+      message(sprintf("Iteration %d/%d: day = %d | dep = %s | mode = %s", 
+                      i, total_iterations, day, dep, mode))
+      i <- i + 1
     }
   }
-  
 }
+
 
 
 ##### Checking how much overlap we have in the event study #####
 
 check_7 <- df_7 %>%
   mutate(n = 1) %>%
-  group_by(place_id,date) %>%
-  summarise(n = sum(n)) 
+  group_by(place_id,date,event) %>%
+  summarise(n = sum(n))  %>%
+  ungroup()
 
 check_14 <- df_14 %>%
   mutate(n = 1) %>%
-  group_by(place_id,date) %>%
-  summarise(n = sum(n)) 
+  group_by(place_id,date,event) %>%
+  summarise(n = sum(n)) %>%
+  ungroup()
 
 for (days in c(7,14)) {
   if (days == 7) {
@@ -135,9 +148,15 @@ for (days in c(7,14)) {
   for (num in 1:9) {
     a <- temp %>%
       filter(n > num) %>%
-      nrow()
+      summarise(n = sum(n)) %>%
+      pull
     
-    print(paste0("Considering a ", days,"-day window, there are ",a," precinct-date observations that overlap  ", num, " time(s)"))
+    b <- temp %>%
+      filter(n > num) %>%
+      summarise(events = sum(event)) %>%
+      pull
+    
+    print(paste0(days,"-day window: ",a," precinct-date observations and ",b," events that overlap ",num," time(s)"))
   }
 }
 
