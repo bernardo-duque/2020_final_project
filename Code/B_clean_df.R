@@ -144,12 +144,14 @@ df_week <- df_date %>%
   group_by(year,week_index, place_id) %>%
   summarise(
     week_start = min(date),
-    across(police_killing:retaliation_index, ~ sum(.x, na.rm = TRUE)),
+    across(police_killing:retaliation_index_2, ~ sum(.x, na.rm = TRUE)),
     event = sum(event, na.rm = TRUE) > 0,
-    police_killing_100k = sum(police_killing_100k, na.rm = TRUE)
-  )
+    pop = max(pop)
+  ) %>%
+  ungroup() %>%
+  mutate(across(police_killing:retaliation_index_2,~.x*100000/pop,.names = "{.col}_100k"))
 
-  
+save(df_week, file = paste0(wd,"Input/df_week.rda"))
 
 # remove everything that is not the wd paths
 rm(list=setdiff(ls(), c("wd","wd_data")))
