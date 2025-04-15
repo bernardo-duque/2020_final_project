@@ -50,20 +50,104 @@ summary <- summary %>%
   mutate(across(mean:max,~round(.x,2))) %>%
   rbind(ovr)
 
-### Mean per year ####
-
-teste <- df_date %>%
-  group_by(year,place_id) %>%
-  summarise(events = sum(event)) %>%
-  group_by(year) %>%
-  summarise(mean_events = mean(events),
-            sd_events = sd(events),
-            max = max(events),
-            min = min(events)) %>%
-  round(2)
+# map of events per year
 
 ##### Summary on retaliation #####
 
+
+
+
+### Mean per year ####
+
+plot <- df_date %>%
+  group_by(year,place_id) %>%
+  summarise(pop_year = max(pop,na.rm=T),
+            events = sum(event),
+            ri_100k = sum(retaliation_index,na.rm=T)*100000/pop_year,
+            ri_2_100k = sum(retaliation_index_2,na.rm=T)*100000/pop_year) %>%
+  group_by(year) %>%
+  summarise(mean_events = mean(events),
+            sd_events = sd(events),
+            max_events = max(events),
+            min_events = min(events),
+            mean_ri = mean(ri_100k),
+            sd_ri = sd(ri_100k),
+            max_ri = max(ri_100k),
+            min_ri = min(ri_100k),
+            mean_ri_2 = mean(ri_2_100k),
+            sd_ri_2 = sd(ri_2_100k),
+            max_ri_2 = max(ri_2_100k),
+            min_ri_2 = min(ri_2_100k)) %>%
+  round(2)
+
+p_tidy <- plot %>%
+  pivot_longer(
+    cols = -year,                      # pivot everything except 'year'
+    names_to = c("stat", "group"),     # split column names into 'stat' & 'group'
+    names_pattern = "(mean|sd|max|min)_(.*)",
+    values_to = "value"
+  ) %>%
+  pivot_wider(
+    names_from = stat,      # create columns 'mean', 'sd', 'max', 'min'
+    values_from = value
+  ) %>%
+  select(year, group, mean, sd, max, min) %>%
+  mutate(group = case_when(
+    group == "events" ~ "Events",
+    group == "ri" ~ "RI",
+    group == "ri_2" ~ "RI 2",
+    TRUE ~ NA
+  ))
+
+p <-  p_tidy %>%
+  filter(group != "Events") %>%
+  ggplot(aes(x = year, y = mean, color = group, linetype = group)) + 
+  geom_line() +
+  geom_point(size = 0.5) +
+  xlab("Year") + ylab("Average Retaliation by Precinct") +
+  theme_bw() + 
+  theme(
+    legend.position = c(0.5, 0.8),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    axis.text = element_text(face = "bold")
+  ) +
+  scale_x_continuous(breaks = scales::breaks_pretty(n = 8)) +
+  scale_fill_manual(values=c("lightpink", "deeppink")) +
+  scale_color_manual(values=c("lightpink", "deeppink"))
+
+
+p
+  
+
+Cairo::CairoJPEG(paste0(wd,"Output/mean_ri.jpeg"), width = 8, height = 6,units = "in", dpi = 300)
+print(p)
+dev.off()
+
+p <-  p_tidy %>%
+  filter(group == "Events") %>%
+  ggplot(aes(x = year, y = mean, color = group, linetype = group)) + 
+  geom_line() +
+  geom_point(size = 0.5) +
+  xlab("Year") + ylab("Average Number of Events by Precinct") +
+  theme_bw() + 
+  theme(
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    axis.text = element_text(face = "bold")
+  ) +
+  scale_x_continuous(breaks = scales::breaks_pretty(n = 8)) +
+  scale_fill_manual(values=c("deeppink")) +
+  scale_color_manual(values=c("deeppink"))
+
+
+p
+
+
+Cairo::CairoJPEG(paste0(wd,"Output/mean_events.jpeg"), width = 8, height = 6,units = "in", dpi = 300)
+print(p)
+dev.off()
 
 
 ##### Map of precinct annual means #####

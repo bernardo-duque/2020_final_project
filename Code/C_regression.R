@@ -94,3 +94,5 @@ for (dep_var in c("retaliation_index_100k","retaliation_index_2_100k")){
   }
   
 }
+
+rm(list = ls())
