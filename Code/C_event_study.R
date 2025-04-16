@@ -100,10 +100,10 @@ plot_es <- function(df,plot_name){
   pd <- position_dodge(0.1)
   
   p <- ggplot(df, aes(x = relative_day, y = coef)) + 
-    geom_errorbar(aes(ymin=ci_low, ymax=ci_high),  colour= "#1e81b0",width=.1, position=pd) +
-    geom_point(position=pd, colour= "#76b5c5", size = 1.5) +
-    geom_hline(yintercept=0, linetype="dashed", color = "red") +
-    geom_vline(xintercept=c(-1), linetype="solid", color = "red",
+    geom_errorbar(aes(ymin=ci_low, ymax=ci_high),  colour= "deeppink",width=.1, position=pd) +
+    geom_point(position=pd, colour= "deeppink", size = 1.5) +
+    geom_hline(yintercept=0, linetype="dashed", color = "#1e81b0") +
+    geom_vline(xintercept=c(-1), linetype="solid", color = "#1e81b0",
                alpha = 0.4) +
     theme_bw() + 
     theme(panel.grid.major.x = element_blank(),

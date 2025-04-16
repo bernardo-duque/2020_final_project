@@ -1,118 +1,29 @@
 load(paste0(wd,"Input/df_date.rda"))
 
-
-##### 1. Table (Summary Statistics) #####
-
 num_years <- unique(df_date$year) %>%
   length()
 
-# summary_table <- function(data = df_date, var,indicator_100k = FALSE) {
-# 
-#   # total sum of var across all rows
-#   total_sum <- sum(data[[var]], na.rm = TRUE)
-# 
-#   # max and min by precinct-year
-#   max_min <- data %>%
-#     group_by(year, place_id) %>%
-#     summarise(sum = sum(.data[[var]], na.rm = TRUE), .groups = "drop") %>%
-#     summarise(
-#       max = max(sum, na.rm = TRUE),
-#       min = min(sum, na.rm = TRUE),
-#       .groups = "drop"
-#     )
-# 
-#   # "total" row
-#   ovr <- max_min %>%
-#     mutate(
-#       type   = "Total",
-#       mean   = total_sum,
-#       median = "",
-#       sd     = ""
-#     ) %>%
-#     select(type, mean, median, sd, min, max)
-# 
-#   # summary: sum(var) per precinct, then average across precincts
-#   summary_overall <- data %>%
-#     group_by(place_id) %>%
-#     summarise(var_sum = sum(.data[[var]], na.rm = TRUE), .groups = "drop") %>%
-#     summarise(
-#       mean   = mean(var_sum),
-#       median = median(var_sum),
-#       sd     = sd(var_sum),
-#       min    = min(var_sum),
-#       max    = max(var_sum)
-#     ) %>%
-#     mutate(type = "Overall") %>%
-#     select(type, everything())
-# 
-#   # year summary: sum(var) per precinct / number of years, then average
-#   summary_year <- data %>%
-#     group_by(place_id) %>%
-#     summarise(var_sum = sum(.data[[var]], na.rm = TRUE) / num_years, .groups = "drop") %>%
-#     summarise(
-#       mean   = mean(var_sum),
-#       median = median(var_sum),
-#       sd     = sd(var_sum),
-#       min    = min(var_sum),
-#       max    = max(var_sum)
-#     ) %>%
-#     mutate(type = "Year") %>%
-#     select(type, everything())
-# 
-#   # combine everything
-#   final_summary <- summary_overall %>%
-#     rbind(summary_year) %>%
-#     mutate(across(mean:max, ~ round(.x, 2))) %>%
-#     rbind(ovr)
-# 
-#   return(final_summary)
-# }
-# 
-# 
-# # apply summary function to each variable of interest
-# variables <- c("event","retaliation_index","retaliation_index_2",
-#                "retaliation_index_100k","retaliation_index_2_100k")
-# 
-# summary_final <- list()
-# i <- 1
-# for (var in variables) {
-#   if (var %in% c("retaliation_index_100k", "retaliation_index_2_100k")) {
-#     temp <- summary_table(var = var,indicator_100k = T))
-#   } else{
-#     temp <- summary_table(var = var)
-#   }
-# 
-#   summary_final[[i]] <- temp
-#   i <- i + 1
-# 
-# }
-# 
-# # combine everything in a single table
-# summary_final <- lapply(summary_final,"rbind")
-# 
-# # now prepare the latex table
-
-### 1. Plots (Averages per precincts) ####
+##### 1. Plots (Averages per precincts) ####
 
 plot <- df_date %>%
   group_by(year,place_id) %>%
   summarise(pop_year = max(pop,na.rm=T),
             events = sum(event),
-            ri_100k = sum(retaliation_index,na.rm=T)*100000/pop_year,
-            ri_2_100k = sum(retaliation_index_2,na.rm=T)*100000/pop_year) %>%
+            ri = sum(retaliation_index,na.rm=T),
+            ri_2 = sum(retaliation_index_2,na.rm=T)) %>%
   group_by(year) %>%
   summarise(mean_events = mean(events),
             sd_events = sd(events),
             max_events = max(events),
             min_events = min(events),
-            mean_ri = mean(ri_100k),
-            sd_ri = sd(ri_100k),
-            max_ri = max(ri_100k),
-            min_ri = min(ri_100k),
-            mean_ri_2 = mean(ri_2_100k),
-            sd_ri_2 = sd(ri_2_100k),
-            max_ri_2 = max(ri_2_100k),
-            min_ri_2 = min(ri_2_100k)) %>%
+            mean_ri = mean(ri),
+            sd_ri = sd(ri),
+            max_ri = max(ri),
+            min_ri = min(ri),
+            mean_ri_2 = mean(ri_2),
+            sd_ri_2 = sd(ri_2),
+            max_ri_2 = max(ri_2),
+            min_ri_2 = min(ri_2)) %>%
   round(2)
 
 p_tidy <- plot %>%
@@ -185,7 +96,7 @@ print(p)
 dev.off()
 
 
-##### 3. Maps (Average per year) #####
+##### 2. Maps (Average per year) #####
 
 mean_place <- df_date %>%
   group_by(place_id) %>%
