@@ -13,6 +13,8 @@ df <- tibble()
 crimes <- c("Apreensão de drogas","Furto de veículos","Homicídio doloso","Latrocínio (Roubo seguido de morte)",
             "Morte por intervenção de agente do Estado"," Tentativa de homicídio","Roubo")
 
+i <- 1
+total_iterations <- length(years)
 # read and concatenate all csvs selecting the relevant variables
 for(year in years){
     temp <- read.csv2(paste0(year,".csv"),, fileEncoding = "latin1",header=T)
@@ -23,6 +25,9 @@ for(year in years){
                             str_detect(crime,paste0(crimes,collapse="|")))
 
     df <- rbind(df,temp)
+    message(sprintf("Iteration %d/%d", 
+                    i, total_iterations))
+    i <- i + 1
 }
 
 # adjust some variables

@@ -50,7 +50,7 @@ p <-  p_tidy %>%
   ggplot(aes(x = year, y = mean, color = group, linetype = group)) + 
   geom_line() +
   geom_point(size = 0.5) +
-  xlab("Year") + ylab("Average Retaliation (100k) by Precinct") +
+  xlab("Year") + ylab("Average Retaliation by Precinct") +
   theme_bw() + 
   theme(
     legend.position = c(0.5, 0.8),
@@ -84,6 +84,7 @@ p <-  p_tidy %>%
     axis.text = element_text(face = "bold")
   ) +
   scale_x_continuous(breaks = scales::breaks_pretty(n = 8)) +
+  scale_y_continuous(limits = c(0, 15), expand = c(0, 0)) +
   scale_fill_manual(values=c("deeppink")) +
   scale_color_manual(values=c("deeppink"))
 

@@ -9,6 +9,7 @@ library(lfe)
 library(fixest)
 library(rlang)
 library(modelsummary)
+library(sf)
 
 # change the main wd (repository) here
 wd <- "/Users/bernardoduque/Documents/Brown/Aulas/2nd semester/Applied Economics/2020_final_project/"
