@@ -92,7 +92,7 @@ num_years <- unique(df_date$year) %>%
 # 
 # # now prepare the latex table
 
-### 2. Plots (Averages per precincts) ####
+### 1. Plots (Averages per precincts) ####
 
 plot <- df_date %>%
   group_by(year,place_id) %>%
