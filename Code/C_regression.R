@@ -80,7 +80,7 @@ for (dep_var in c("retaliation_index_100k","retaliation_index_2_100k")){
       ),
       drop = "(Constant)", # remove the constant row
       extralines = list(
-        "Mean of DV" = rep(round(mean_dv, 3), length(regs)) #,# one entry per model
+        "Baseline Dep. Var." = rep(round(mean_dv, 3), length(regs)) #,# one entry per model
         #"Cluster SE" = rep("Precinct",4)
       ),
       tex = TRUE,
@@ -95,4 +95,4 @@ for (dep_var in c("retaliation_index_100k","retaliation_index_2_100k")){
   
 }
 
-rm(list = ls())
+rm(list=setdiff(ls(), c("wd","wd_data")))

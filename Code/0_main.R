@@ -24,6 +24,6 @@ source(paste0(wd,"Code/C_descriptives.R"))
 
 source(paste0(wd,"Code/C_event_study.R"))
 
-source(paste0(wd,"Code/C_analsysis.R"))
+source(paste0(wd,"Code/C_regression.R"))
 
 

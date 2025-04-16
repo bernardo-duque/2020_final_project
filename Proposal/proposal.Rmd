@@ -1,0 +1,73 @@
+---
+title: "**Police Activity and Criminal Retaliation**"
+subtitle: |
+  | Research Project Proposal -- Applied Economics Analysis
+  | February 04, 2025
+author: |
+  | Bernardo Duque
+  | Brown University
+fontfamily: mathpazo
+output: 
+  pdf_document:
+    toc: F
+    number_sections: F
+fontsize: 12pt
+fig_caption: yes
+header-includes:
+ \usepackage{floatrow}
+ \floatplacement{figure}{H}
+ \floatsetup[figure]{capposition=top}
+ \floatsetup[table]{capposition=top}
+ \renewcommand{\baselinestretch}{1.5} 
+ \usepackage{booktabs}
+ \addtolength{\skip\footins}{1pc}
+ \usepackage{tabularx}
+ \usepackage{makecell}
+ \usepackage{setspace}
+ \usepackage{hyperref}
+ \hypersetup{
+   citecolor=blue,
+ }
+ \usepackage[utf8]{inputenc}
+ \usepackage{booktabs}
+ \usepackage{longtable}
+ \DeclareUnicodeCharacter{2265}{\geq}
+ \usepackage{enumitem} 
+ \usepackage{bbold}
+ \usepackage{mathtools}
+ \usepackage{adjustbox}
+ \usepackage{graphicx}
+ \usepackage[bottom]{footmisc}
+ \usepackage{lscape}
+ \usepackage{caption}
+ \usepackage{rotating}
+bibliography: export.bib
+link-citations: true
+nocite: '@*'
+---
+```{r setup, echo = F, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE,echo = F,fig.align = 'center') 
+```
+
+ 
+# Proposal
+
+## Question
+
+Brazil's police activity is characterized by reactive actions instead of preemptive ones. Rio de Janeiro's police, in particular, is known for doing police incursions into \textit{favelas}\footnote{\textit{Favelas} are Brazilian slums typically characterized by high-density population, low-quality infrastructure, and high levels of poverty.}, which result in deaths of not only police officers and criminals but also of regular citizens [@incursoes]. Anecdotal evidence suggests that this creates a circle of violence due to retaliation from both parties\footnote{For reprisals from criminals, see \href{https://g1.globo.com/rj/rio-de-janeiro/noticia/2025/02/03/rj-balanco-roubos-carros.ghtml}{\textcolor{blue}{this story}} about the increase in vehicle theft after police incursions. In contrast, retaliation from police officers is illustrated by \href{https://pt.wikipedia.org/wiki/Chacina_do_Jacarezinho}{\textcolor{blue}{this story}} about the killing of 29 individuals after the death of a police officer.}. Does retaliation from criminals indeed occur? What are its costs?
+
+## Data
+
+We will use data from the state of Rio de Janeiro's Institute of Public Security (ISP)\footnote{https://www.ispdados.rj.gov.br/}. It includes information on all the crimes officially reported to the police, the month and year when they occurred and the precinct where they were registered. However, the version we will use is no longer available online: it contains the same data but it also includes the day on which the crime occurred.
+
+
+## Analysis
+
+We will investigate whether deviations from the mean in the intensity of police incursions\footnote{We use the number of killings by the police as a proxy for the intensity of police incursions} (which we call triggers) are correlated with deviations in the number of crimes that are anecdotally associated with criminal retaliation. First, we will identify triggers and consider a 1-week time window before and after it, providing the share of triggers that lead to retaliation. Next, we will run a simple event study, stacking the events to see if there is a correlation between triggers and retaliation. Finally, we will run the following regression: $$ Retaliation_{p,w} = \beta_0 + \beta_1Trigger_{p,w} + \beta_2Trigger_{p,w-1} + \alpha_p + \gamma_y + \lambda_m +\varepsilon_{p,w}$$
+
+Where $\alpha_p$, $\gamma_y$, and $\lambda_m$ are precinct, year, and month\footnote{Month fixed effects are included to avoid potential seasonal effects.} fixed effects, respectively. We are interested in $\beta_1$ which provides the correlation between the trigger and the retaliation in a particular week $w$ in precinct $m$ and $\beta_2$, the effect of the lagged trigger. This is a similar but different specification to @incursoes.
+
+ 
+# References {-}
+
+

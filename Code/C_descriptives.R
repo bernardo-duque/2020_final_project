@@ -1,63 +1,98 @@
 load(paste0(wd,"Input/df_date.rda"))
 
-##### Number of events #####
+
+##### 1. Table (Summary Statistics) #####
 
 num_years <- unique(df_date$year) %>%
   length()
 
-n_events <- sum(df_date$event)
+# summary_table <- function(data = df_date, var,indicator_100k = FALSE) {
+# 
+#   # total sum of var across all rows
+#   total_sum <- sum(data[[var]], na.rm = TRUE)
+# 
+#   # max and min by precinct-year
+#   max_min <- data %>%
+#     group_by(year, place_id) %>%
+#     summarise(sum = sum(.data[[var]], na.rm = TRUE), .groups = "drop") %>%
+#     summarise(
+#       max = max(sum, na.rm = TRUE),
+#       min = min(sum, na.rm = TRUE),
+#       .groups = "drop"
+#     )
+# 
+#   # "total" row
+#   ovr <- max_min %>%
+#     mutate(
+#       type   = "Total",
+#       mean   = total_sum,
+#       median = "",
+#       sd     = ""
+#     ) %>%
+#     select(type, mean, median, sd, min, max)
+# 
+#   # summary: sum(var) per precinct, then average across precincts
+#   summary_overall <- data %>%
+#     group_by(place_id) %>%
+#     summarise(var_sum = sum(.data[[var]], na.rm = TRUE), .groups = "drop") %>%
+#     summarise(
+#       mean   = mean(var_sum),
+#       median = median(var_sum),
+#       sd     = sd(var_sum),
+#       min    = min(var_sum),
+#       max    = max(var_sum)
+#     ) %>%
+#     mutate(type = "Overall") %>%
+#     select(type, everything())
+# 
+#   # year summary: sum(var) per precinct / number of years, then average
+#   summary_year <- data %>%
+#     group_by(place_id) %>%
+#     summarise(var_sum = sum(.data[[var]], na.rm = TRUE) / num_years, .groups = "drop") %>%
+#     summarise(
+#       mean   = mean(var_sum),
+#       median = median(var_sum),
+#       sd     = sd(var_sum),
+#       min    = min(var_sum),
+#       max    = max(var_sum)
+#     ) %>%
+#     mutate(type = "Year") %>%
+#     select(type, everything())
+# 
+#   # combine everything
+#   final_summary <- summary_overall %>%
+#     rbind(summary_year) %>%
+#     mutate(across(mean:max, ~ round(.x, 2))) %>%
+#     rbind(ovr)
+# 
+#   return(final_summary)
+# }
+# 
+# 
+# # apply summary function to each variable of interest
+# variables <- c("event","retaliation_index","retaliation_index_2",
+#                "retaliation_index_100k","retaliation_index_2_100k")
+# 
+# summary_final <- list()
+# i <- 1
+# for (var in variables) {
+#   if (var %in% c("retaliation_index_100k", "retaliation_index_2_100k")) {
+#     temp <- summary_table(var = var,indicator_100k = T))
+#   } else{
+#     temp <- summary_table(var = var)
+#   }
+# 
+#   summary_final[[i]] <- temp
+#   i <- i + 1
+# 
+# }
+# 
+# # combine everything in a single table
+# summary_final <- lapply(summary_final,"rbind")
+# 
+# # now prepare the latex table
 
-max_events_year <- df_date %>%
-  group_by(year,place_id) %>%
-  summarise(sum = sum(event)) %>%
-  ungroup() %>%
-  summarise(max = max(sum),
-            min = min(sum))
-
-ovr <- max_events_year %>%
-  mutate(type = "Total", mean = n_events,median = "",sd = "") %>%
-  select(type,mean,median,sd,max,min)
-
-# summary over the whole period within precincts
-summary <- df_date %>%
-  group_by(place_id) %>%
-  summarise(event = sum(event)) %>%
-  ungroup() %>%
-  summarise(mean = mean(event),
-            median = median(event),
-            sd = sd(event),
-            min = min(event),
-            max = max(event)) %>%
-  mutate(type = "Overall") %>%
-  select(type, everything())
-
-# annual summary within precincts
-summary_year <- df_date %>%
-  group_by(place_id) %>%
-  summarise(event = sum(event)/num_years) %>%
-  ungroup() %>%
-  summarise(mean = mean(event),
-            median = median(event),
-            sd = sd(event),
-            min = min(event),
-            max = max(event)) %>%
-  mutate(type = "Year") %>%
-  select(type, everything())
-
-# putting everything in one table
-summary <- summary %>%
-  rbind(summary_year) %>%
-  mutate(across(mean:max,~round(.x,2))) %>%
-  rbind(ovr)
-
-# map of events per year
-
-##### Summary on retaliation #####
-
-
-
-
-### Mean per year ####
+### 2. Plots (Averages per precincts) ####
 
 plot <- df_date %>%
   group_by(year,place_id) %>%
@@ -104,7 +139,7 @@ p <-  p_tidy %>%
   ggplot(aes(x = year, y = mean, color = group, linetype = group)) + 
   geom_line() +
   geom_point(size = 0.5) +
-  xlab("Year") + ylab("Average Retaliation by Precinct") +
+  xlab("Year") + ylab("Average Retaliation (100k) by Precinct") +
   theme_bw() + 
   theme(
     legend.position = c(0.5, 0.8),
@@ -150,7 +185,7 @@ print(p)
 dev.off()
 
 
-##### Map of precinct annual means #####
+##### 3. Maps (Average per year) #####
 
 mean_place <- df_date %>%
   group_by(place_id) %>%
