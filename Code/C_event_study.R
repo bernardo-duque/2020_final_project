@@ -23,7 +23,7 @@ run_es <- function(df,dep_var,mode = c("avg","lm","lm_fe_1","lm_fe_2"),n_days){
       reg <- lm(formula,df)
       
       # clustering se
-      reg_test <- coeftest(reg, vcov = vcovHC(reg,"HC0",cluster = "place_id"))
+      reg_test <- coeftest(reg, vcov = sandwich::vcovHC(reg,"HC0",cluster = "place_id"))
       reg_test <- reg_test[1:(n_days*2 + 1),]
       
       # standardize in relation to the last period before the treatment

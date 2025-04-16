@@ -36,7 +36,7 @@ df <- df %>%
     select(id,year,month,crime,place_id, neighborhood, date)
 
 # note that there can be more than one neighborhood in the same precint and one neighborhood can be in more than one precinct
-label(df$place_id) <- "Police precinct"
+#label(df$place_id) <- "Police precinct"
 
 # save the dataframe
 save(df, file = paste0(wd,"Input/df.rda"))

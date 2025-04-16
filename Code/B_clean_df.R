@@ -59,7 +59,7 @@ df <- df %>%
 dates <- tibble(date = seq(as.Date("2006-01-01"), as.Date("2020-12-30"), by = "day"))
 
 dates <- expand_grid(date = dates$date, place_id = unique(df$place_id))
-label(dates$place_id) <- "Police precinct"
+#label(dates$place_id) <- "Police precinct"
 
 dates <- dates %>%
   mutate(year = year(date),
